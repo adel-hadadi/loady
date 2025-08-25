@@ -3,14 +3,15 @@ package transport
 import (
 	"fmt"
 	"github.com/adel-hadadi/load-balancer/internal/lb"
+	"log"
 	"net/http"
 )
 
 type Server struct {
-	balancer lb.Balancer
+	balancer *lb.BalancerProvider
 }
 
-func New(balancer lb.Balancer) *Server {
+func New(balancer *lb.BalancerProvider) *Server {
 	return &Server{
 		balancer: balancer,
 	}
@@ -29,7 +30,13 @@ func (s *Server) routes() http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		sv := s.balancer.Next(r)
+		sv, err := s.balancer.Next(r)
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+
 		if sv == nil {
 			w.WriteHeader(http.StatusServiceUnavailable)
 			return

@@ -2,11 +2,50 @@ package lb
 
 import (
 	"fmt"
+	"github.com/adel-hadadi/load-balancer/internal/config"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 )
+
+type ServerRegistry struct{}
+
+func NewServerRegistry() *ServerRegistry {
+	return &ServerRegistry{}
+}
+
+func (r *ServerRegistry) GetServers() []*Server {
+	cfg, _ := config.Get()
+
+	servers := make([]*Server, len(cfg.Servers))
+
+	for k, raw := range cfg.Servers {
+		u, err := url.Parse(raw)
+		if err != nil {
+			panic(err)
+		}
+
+		servers[k] = &Server{
+			url:       raw,
+			isHealthy: true,
+			rp:        httputil.NewSingleHostReverseProxy(u),
+		}
+	}
+
+	return servers
+}
+
+func (r *ServerRegistry) HealthyServers() []*Server {
+	var healthy []*Server
+	for _, server := range r.GetServers() {
+		if server.isHealthy {
+			healthy = append(healthy, server)
+		}
+	}
+
+	return healthy
+}
 
 type Server struct {
 	url       string
@@ -15,7 +54,9 @@ type Server struct {
 }
 
 func (s *Server) CheckHealth() {
-	response, err := http.Get(s.url + "/health")
+	cfg, _ := config.Get()
+
+	response, err := http.Get(s.url + cfg.Healthcheck.Api)
 	if err != nil || response.StatusCode != 200 {
 		s.isHealthy = false
 

@@ -1,33 +1,27 @@
 package main
 
 import (
-	"fmt"
+	"context"
+	"github.com/adel-hadadi/load-balancer/internal/config"
 	"github.com/adel-hadadi/load-balancer/internal/lb"
 	"github.com/adel-hadadi/load-balancer/internal/transport"
 	"log"
-	"os"
 )
 
 func main() {
-	args := os.Args[1:]
-	if len(args) == 0 {
-		fmt.Println("Usage: loady [...servers]")
-		return
+	cfg, err := config.Get()
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	balancer := lb.NewIPHashBalancer()
+	registry := lb.NewServerRegistry()
 
-	for _, v := range args {
-		sv, err := lb.NewServer(v)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
+	balancer := lb.New(registry)
 
-		balancer.Servers = append(balancer.Servers, sv)
-	}
+	balancer.Healthcheck(context.Background())
 
 	sv := transport.New(balancer)
 
-	log.Fatal(sv.Serve(80))
+	log.Println("load balancer served on port:", cfg.Port)
+	log.Fatal(sv.Serve(cfg.Port))
 }

@@ -2,22 +2,19 @@ package lb
 
 import (
 	"context"
+	"github.com/adel-hadadi/load-balancer/internal/config"
 	"time"
 )
 
-func (l *RoundRobinBalancer) healthcheck(ctx context.Context) {
-	ticker := time.NewTicker(5 * time.Second)
-
+func (p *BalancerProvider) Healthcheck(ctx context.Context) {
 	go func() {
 		for {
-			select {
-			case <-ticker.C:
-				for {
-					time.Sleep(5 * time.Second)
+			cfg, _ := config.Get()
 
-					for _, sv := range l.Servers {
-						sv.CheckHealth()
-					}
+			select {
+			case <-time.After(cfg.Healthcheck.Duration):
+				for _, sv := range p.registry.GetServers() {
+					sv.CheckHealth()
 				}
 			case <-ctx.Done():
 				return
