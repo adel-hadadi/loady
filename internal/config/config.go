@@ -9,8 +9,11 @@ import (
 )
 
 var (
-	once   sync.Once
-	config *Config
+	once     sync.Once
+	cfg      *Config
+	cfgErr   error
+	mu       sync.RWMutex
+	watchers []chan *Config
 )
 
 type Config struct {
@@ -23,38 +26,70 @@ type Config struct {
 	}
 }
 
-func Get() (*Config, error) {
-	var err error
-
-	once.Do(func() {
-		log.Println("loading config")
-	
-		var v *viper.Viper
-		v, err = setup()
-
-		err = v.Unmarshal(&config)
-
-		v.OnConfigChange(func(e fsnotify.Event) {
-			if err := v.Unmarshal(&config); err != nil {
-				log.Fatal(err)
-			}
-		})
-	})
-
-	return config, err
+func (c *Config) Watch() <-chan *Config {
+	ch := make(chan *Config)
+	mu.Lock()
+	watchers = append(watchers, ch)
+	mu.Unlock()
+	return ch
 }
 
-func setup() (*viper.Viper, error) {
-	viper.SetConfigName("config")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath(".")
+func Get() (*Config, error) {
+	once.Do(func() {
+		cfg, cfgErr = loadConfig()
+	})
+	return cfg, cfgErr
+}
 
-	viper.WatchConfig()
+func loadConfig() (*Config, error) {
+	log.Println("loading config")
 
-	err := viper.ReadInConfig()
+	v, err := setupViper()
 	if err != nil {
 		return nil, err
 	}
 
-	return viper.GetViper(), nil
+	c := &Config{}
+	if err := v.Unmarshal(&c); err != nil {
+		return nil, err
+	}
+
+	v.OnConfigChange(func(e fsnotify.Event) {
+		log.Printf("config file changed: %s", e.Name)
+
+		newCfg := &Config{}
+		if err := v.Unmarshal(&newCfg); err != nil {
+			log.Printf("failed to reload config: %v", err)
+			return
+		}
+
+		mu.Lock()
+		cfg = newCfg
+		for _, w := range watchers {
+			select {
+			case w <- newCfg:
+			default:
+			}
+		}
+		mu.Unlock()
+	})
+
+	return c, nil
+}
+
+func setupViper() (*viper.Viper, error) {
+	v := viper.New()
+
+	v.SetConfigName("config")
+	v.SetConfigType("yaml")
+	v.AddConfigPath(".")
+
+	err := v.ReadInConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	v.WatchConfig()
+
+	return v, nil
 }

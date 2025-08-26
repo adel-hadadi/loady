@@ -1,6 +1,6 @@
 port: 80
 
-algorithm: "iphash"
+algorithm: "round-robin"
 
 servers:
   - "http://localhost:8080"

@@ -2,44 +2,73 @@ package lb
 
 import (
 	"fmt"
-	"github.com/adel-hadadi/load-balancer/internal/config"
+	"github.com/adel-hadadi/load-balancer/utils"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"sync"
+	"sync/atomic"
 )
 
-type ServerRegistry struct{}
-
-func NewServerRegistry() *ServerRegistry {
-	return &ServerRegistry{}
+type ServerRegistry struct {
+	mu      sync.RWMutex
+	urls    []string
+	servers []*Server
 }
 
-func (r *ServerRegistry) GetServers() []*Server {
-	cfg, _ := config.Get()
+func NewServerRegistry(servers []string) (*ServerRegistry, error) {
+	r := &ServerRegistry{
+		servers: make([]*Server, 0),
+	}
 
-	servers := make([]*Server, len(cfg.Servers))
+	err := r.UpdateServers(servers)
+	if err != nil {
+		return nil, err
+	}
 
-	for k, raw := range cfg.Servers {
-		u, err := url.Parse(raw)
+	return r, nil
+}
+
+func (r *ServerRegistry) UpdateServers(urls []string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	added, removed := utils.DiffSlices(r.urls, urls)
+
+	for _, u := range added {
+		s, err := NewServer(u)
 		if err != nil {
-			panic(err)
+			return fmt.Errorf("failed to add server %s: %v", u, err)
 		}
 
-		servers[k] = &Server{
-			url:       raw,
-			isHealthy: true,
-			rp:        httputil.NewSingleHostReverseProxy(u),
+		r.servers = append(r.servers, s)
+		r.urls = append(r.urls, u)
+	}
+
+	for _, u := range removed {
+		for k, server := range r.servers {
+			if server.url == u {
+				r.servers = append(r.servers[:k], r.servers[k+1:]...)
+				r.urls = append(r.urls[:k], r.urls[k+1:]...)
+			}
 		}
 	}
 
-	return servers
+	return nil
+}
+
+func (r *ServerRegistry) All() []*Server {
+	return r.servers
 }
 
 func (r *ServerRegistry) HealthyServers() []*Server {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
 	var healthy []*Server
-	for _, server := range r.GetServers() {
-		if server.isHealthy {
+	for _, server := range r.servers {
+		if server.IsHealthy() {
 			healthy = append(healthy, server)
 		}
 	}
@@ -48,39 +77,48 @@ func (r *ServerRegistry) HealthyServers() []*Server {
 }
 
 type Server struct {
-	url       string
-	isHealthy bool
-	rp        *httputil.ReverseProxy
+	url     string
+	healthy atomic.Bool
+	rp      *httputil.ReverseProxy
 }
 
-func (s *Server) CheckHealth() {
-	cfg, _ := config.Get()
+func (s *Server) IsHealthy() bool {
+	return s.healthy.Load()
+}
 
-	response, err := http.Get(s.url + cfg.Healthcheck.Api)
+func (s *Server) SetHealthy(v bool) {
+	s.healthy.Store(v)
+}
+
+func (s *Server) CheckHealth(path string) {
+	response, err := http.Get(s.url + path)
 	if err != nil || response.StatusCode != 200 {
-		s.isHealthy = false
+		s.SetHealthy(false)
 
 		log.Printf("%s is unhealthy", s.url)
 
 		return
 	}
 
-	s.isHealthy = true
+	s.SetHealthy(true)
 }
 
 func NewServer(u string) (*Server, error) {
 	target, err := url.Parse(u)
 	if err != nil {
-		return nil, fmt.Errorf("invalid url: %w", err)
+		return nil, fmt.Errorf("invalid urls: %w", err)
 	}
 
 	rp := httputil.NewSingleHostReverseProxy(target)
 
-	return &Server{
-		url:       u,
-		isHealthy: true,
-		rp:        rp,
-	}, nil
+	s := &Server{
+		url: u,
+		rp:  rp,
+	}
+
+	s.healthy.Store(true)
+
+	return s, nil
 }
 
 func (s *Server) Serve(w http.ResponseWriter, r *http.Request) {

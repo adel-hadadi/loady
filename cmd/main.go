@@ -14,13 +14,17 @@ func main() {
 		log.Fatal(err)
 	}
 
-	registry := lb.NewServerRegistry()
+	controller, err := lb.NewController(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	balancer := lb.New(registry)
+	err = controller.Run(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	balancer.Healthcheck(context.Background())
-
-	sv := transport.New(balancer)
+	sv := transport.New(controller)
 
 	log.Println("load balancer served on port:", cfg.Port)
 	log.Fatal(sv.Serve(cfg.Port))

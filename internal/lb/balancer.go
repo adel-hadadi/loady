@@ -16,7 +16,7 @@ type RoundRobinBalancer struct {
 	mu      sync.RWMutex
 }
 
-func NewLoadBalancer() *RoundRobinBalancer {
+func NewRoundRobinBalancer() *RoundRobinBalancer {
 	return &RoundRobinBalancer{}
 }
 
