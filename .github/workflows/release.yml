@@ -10,10 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: action/checkout@v4
+        uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: action/setup-go@v5
+        uses: actions/setup-go@v5
         with:
           go-version: "1.23"
 
