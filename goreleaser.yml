@@ -1,0 +1,35 @@
+project_name: loady
+
+builds:
+  - id: loady
+    main: ./cmd
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+
+archives:
+  - format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    replacement:
+      darwin: macOS
+      linux: Linux
+      windows: Windows
+    files:
+      - LICENSE
+      - README.md
+
+checksum:
+  name_template: "checksum.txt"
+
+release:
+  github:
+    owner: adel-hadadi
+    name: loady
