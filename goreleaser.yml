@@ -1,7 +1,8 @@
 project_name: loady
+version: 2
 
 builds:
-  - id: loady
+  - binary: loady
     main: ./cmd
     env:
       - CGO_ENABLED=0
@@ -16,12 +17,11 @@ builds:
       - -s -w
 
 archives:
-  - format: tar.gz
+  - id: loady
     name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
-    replacement:
-      darwin: macOS
-      linux: Linux
-      windows: Windows
+    format_overrides:
+      - goos: windows
+        formats: [ 'zip' ]
     files:
       - LICENSE
       - README.md
