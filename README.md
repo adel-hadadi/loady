@@ -44,8 +44,11 @@ sudo mv loady /usr/local/bin/
 Run Loady with a simple config file:
 
 ```bash
-loady -config ./config.yaml
+loady --config ./config.yaml
 ```
+
+> [!NOTE] 
+> Loady can also run without that `--config` flag but by default its looking for config file in `/etc/loady/config.yml`.
 
 ### Example `config.yaml`
 

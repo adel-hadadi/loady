@@ -10,12 +10,10 @@ import (
 )
 
 func main() {
-	// TODO: read config path from params
 	var configPath string
 	flag.StringVar(&configPath, "config", "/etc/loady/config.yml", "path to config file")
 
 	flag.Parse()
-	// Read the params and if it not setted read config from /etc/loady/config.yml
 
 	cfg, err := config.Get(configPath)
 	if err != nil {
