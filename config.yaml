@@ -8,5 +8,5 @@ servers:
   - "http://localhost:8082"
 
 healthcheck:
-  duration: "5s"
+  duration: "2s"
   api: "/healthz"
