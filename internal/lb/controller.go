@@ -8,6 +8,7 @@ import (
 )
 
 type Controller struct {
+	cfg                *config.Config
 	registry           *ServerRegistry
 	checker            *HealthChecker
 	balancer           Balancer
@@ -32,19 +33,15 @@ func NewController(cfg *config.Config) (*Controller, error) {
 		provider:           provider,
 		checker:            &HealthChecker{},
 		healthCheckRunning: false,
+		cfg:                cfg,
 	}, nil
 }
 
 func (c *Controller) Run(ctx context.Context) error {
 	c.runHealthCheck()
 
-	cfg, err := config.Get()
-	if err != nil {
-		return err
-	}
-
 	go func() {
-		ch := cfg.Watch()
+		ch := c.cfg.Watch()
 		for {
 			select {
 			case <-ctx.Done():
@@ -82,8 +79,6 @@ func (c *Controller) applyConfig(cfg *config.Config) error {
 }
 
 func (c *Controller) runHealthCheck() {
-	cfg, _ := config.Get()
-
 	if c.healthCheckRunning {
 		c.cancelHealth()
 	}
@@ -92,7 +87,7 @@ func (c *Controller) runHealthCheck() {
 	c.cancelHealth = cancel
 	c.healthCheckRunning = true
 
-	c.checker.Start(ctx, c.registry, cfg.Healthcheck.Duration, cfg.Healthcheck.Api)
+	c.checker.Start(ctx, c.registry, c.cfg.Healthcheck.Duration, c.cfg.Healthcheck.Api)
 }
 
 func (c *Controller) Next(req *http.Request) (*Server, error) {

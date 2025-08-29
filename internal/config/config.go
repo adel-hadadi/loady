@@ -34,17 +34,17 @@ func (c *Config) Watch() <-chan *Config {
 	return ch
 }
 
-func Get() (*Config, error) {
+func Get(path string) (*Config, error) {
 	once.Do(func() {
-		cfg, cfgErr = loadConfig()
+		cfg, cfgErr = loadConfig(path)
 	})
 	return cfg, cfgErr
 }
 
-func loadConfig() (*Config, error) {
+func loadConfig(path string) (*Config, error) {
 	log.Println("loading config")
 
-	v, err := setupViper()
+	v, err := setupViper(path)
 	if err != nil {
 		return nil, err
 	}
@@ -77,12 +77,10 @@ func loadConfig() (*Config, error) {
 	return c, nil
 }
 
-func setupViper() (*viper.Viper, error) {
+func setupViper(path string) (*viper.Viper, error) {
 	v := viper.New()
 
-	v.SetConfigName("config")
-	v.SetConfigType("yaml")
-	v.AddConfigPath(".")
+	v.SetConfigFile(path)
 
 	err := v.ReadInConfig()
 	if err != nil {
