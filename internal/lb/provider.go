@@ -33,8 +33,10 @@ func (p *BalancerProvider) SetupAlgorithm(algo string) error {
 		p.balancer = NewRoundRobinBalancer()
 	case "iphash":
 		p.balancer = NewIPHashBalancer()
+	case "least-connections":
+		p.balancer = NewLeastConnectionBalancer()
 	default:
-		return errors.New("unknown algorithm, available balancers: round-robin, iphash)")
+		return errors.New("unknown algorithm, available balancers: round-robin, iphash, least-connections)")
 	}
 
 	return nil

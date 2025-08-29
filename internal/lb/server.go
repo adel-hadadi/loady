@@ -77,9 +77,10 @@ func (r *ServerRegistry) HealthyServers() []*Server {
 }
 
 type Server struct {
-	url     string
-	healthy atomic.Bool
-	rp      *httputil.ReverseProxy
+	url               string
+	activeConnections int64
+	healthy           atomic.Bool
+	rp                *httputil.ReverseProxy
 }
 
 func (s *Server) IsHealthy() bool {
@@ -122,5 +123,8 @@ func NewServer(u string) (*Server, error) {
 }
 
 func (s *Server) Serve(w http.ResponseWriter, r *http.Request) {
+	atomic.AddInt64(&s.activeConnections, 1)
+	defer atomic.AddInt64(&s.activeConnections, -1)
+
 	s.rp.ServeHTTP(w, r)
 }

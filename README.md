@@ -59,7 +59,7 @@ servers:
   - http://127.0.0.1:8082
   - http://127.0.0.1:8083
 
-health_check:
+healthcheck:
   interval: 5s
   timeout: 2s
   path: /health

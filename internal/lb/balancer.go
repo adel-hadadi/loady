@@ -56,3 +56,29 @@ func (b *IPHashBalancer) Next(r *http.Request, servers []*Server) *Server {
 
 	return servers[index]
 }
+
+type LeastConnectionBalancer struct {
+	servers []*Server
+}
+
+func NewLeastConnectionBalancer() *LeastConnectionBalancer {
+	return &LeastConnectionBalancer{
+		servers: make([]*Server, 0),
+	}
+}
+
+func (c *LeastConnectionBalancer) Next(r *http.Request, servers []*Server) *Server {
+	var chosen *Server
+	for _, s := range servers {
+		if chosen == nil {
+			chosen = s
+			continue
+		}
+
+		if chosen.activeConnections > s.activeConnections {
+			chosen = s
+		}
+	}
+
+	return chosen
+}

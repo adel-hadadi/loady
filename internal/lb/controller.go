@@ -87,7 +87,7 @@ func (c *Controller) runHealthCheck() {
 	c.cancelHealth = cancel
 	c.healthCheckRunning = true
 
-	c.checker.Start(ctx, c.registry, c.cfg.Healthcheck.Duration, c.cfg.Healthcheck.Api)
+	c.checker.Start(ctx, c.registry, c.cfg.Healthcheck.Interval, c.cfg.Healthcheck.Path)
 }
 
 func (c *Controller) Next(req *http.Request) (*Server, error) {

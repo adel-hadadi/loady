@@ -21,8 +21,9 @@ type Config struct {
 	Port        int
 	Algorithm   string
 	Healthcheck struct {
-		Duration time.Duration
-		Api      string
+		Interval time.Duration
+		Timeout  time.Duration
+		Path     string
 	}
 }
 
