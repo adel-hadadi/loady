@@ -34,12 +34,12 @@ func (s *Server) routes() http.Handler {
 
 	requestDuration := prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Name: "http_request_duration_seconds",
-		Help: "A histogram of latencies for requests.",
+		Help: "Duration of HTTP requests handled by Loady",
 	}, []string{"server", "path", "method", "code"})
 
 	opsProcessed := promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "http_total_operations_processed",
-		Help: "The total number of processed requests",
+		Help: "Total number of requests processed by Loady.",
 	}, []string{"server", "path", "method", "code"})
 
 	registry := prometheus.NewRegistry()

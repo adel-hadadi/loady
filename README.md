@@ -2,7 +2,8 @@
 
 A lightweight, fast, and extensible load balancer written in Go.
 
-Loady helps you distribute traffic across multiple backend servers with health checks, hot-reloadable configuration, and support for multiple balancing algorithms (round-robin, least-connections, IP hash, etc.).
+Loady helps you distribute traffic across multiple backend servers with health checks, hot-reloadable configuration, and
+support for multiple balancing algorithms (round-robin, least-connections, IP hash, etc.).
 
 ---
 
@@ -47,7 +48,7 @@ Run Loady with a simple config file:
 loady --config ./config.yaml
 ```
 
-> [!NOTE] 
+> [!NOTE]
 > Loady can also run without that `--config` flag but by default its looking for config file in `/etc/loady/config.yml`.
 
 ### Example `config.yaml`
@@ -77,7 +78,8 @@ healthcheck:
 
 ## 🩺 Health Checks
 
-Loady continuously probes backend servers and automatically removes unhealthy nodes from the pool. When they recover, they’re added back automatically.
+Loady continuously probes backend servers and automatically removes unhealthy nodes from the pool. When they recover,
+they’re added back automatically.
 
 Example log:
 
@@ -88,10 +90,38 @@ Example log:
 
 ---
 
-## 📊 Metrics & Logging
+## 📊 Observability with Prometheus
 
-* Logs server health status, request distribution, and errors
-* Future roadmap: Prometheus integration
+**Loady** now integrates with **Prometheus** to provide real-time metrics about your load balancer and the services it
+manages. This allows you to monitor the performance and health of your applications easily.
+
+### Metrics Exported
+
+Some of the key metrics **Loady** exposes:
+
+| Metric                            | Description                                    |
+|-----------------------------------|------------------------------------------------|
+| `http_request_duration_seconds`   | Duration of HTTP requests handled by Loady.    |
+| `http_total_operations_processed` | Total number of requests processed by Loady.   |
+| `healthy_servers_count`           | Number of servers currently marked as healthy. |
+
+### How to Use
+
+1. Run Loady with Prometheus metrics enabled (enabled by default on `/metrics` endpoint).
+2. Point your Prometheus server to scrape Loady:
+
+```yaml
+scrape_configs:
+  - job_name: 'loady'
+    static_configs:
+      - targets: [ '<LOADY_HOST>:<METRICS_PORT>' ]
+```
+
+3. Visualize metrics with Grafana or any other Prometheus-compatible dashboard.
+
+> [!TIP]
+> These metrics help you track response times, detect unhealthy servers quickly, and analyze traffic patterns for better
+> load balancing decisions.
 
 ---
 

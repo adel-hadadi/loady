@@ -14,8 +14,8 @@ import (
 )
 
 var HealthyServers = promauto.NewGauge(prometheus.GaugeOpts{
-	Name: "healthy_servers",
-	Help: "Number of healthy servers",
+	Name: "healthy_servers_count",
+	Help: "Number of servers currently marked as healthy",
 })
 
 type ServerRegistry struct {
