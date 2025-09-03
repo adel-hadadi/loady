@@ -132,7 +132,3 @@ Contributions are welcome! Please open an issue or PR to discuss changes.
 ## 📜 License
 
 MIT License – see [LICENSE](./LICENSE) for details.
-
----
-
-Do you also want me to add a **badges section** at the very top (Go Report Card, CI workflow status, Latest Release, License)? That makes the README look more professional.
