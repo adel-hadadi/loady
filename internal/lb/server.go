@@ -3,6 +3,8 @@ package lb
 import (
 	"fmt"
 	"github.com/adel-hadadi/load-balancer/utils"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -10,6 +12,11 @@ import (
 	"sync"
 	"sync/atomic"
 )
+
+var HealthyServers = promauto.NewGauge(prometheus.GaugeOpts{
+	Name: "healthy_servers",
+	Help: "Number of healthy servers",
+})
 
 type ServerRegistry struct {
 	mu      sync.RWMutex
@@ -83,11 +90,21 @@ type Server struct {
 	rp                *httputil.ReverseProxy
 }
 
+func (s *Server) Name() string {
+	return s.url
+}
+
 func (s *Server) IsHealthy() bool {
 	return s.healthy.Load()
 }
 
 func (s *Server) SetHealthy(v bool) {
+	if s.IsHealthy() && !v {
+		HealthyServers.Dec()
+	} else if !s.IsHealthy() && v {
+		HealthyServers.Inc()
+	}
+
 	s.healthy.Store(v)
 }
 
@@ -117,14 +134,14 @@ func NewServer(u string) (*Server, error) {
 		rp:  rp,
 	}
 
-	s.healthy.Store(true)
+	s.healthy.Store(false)
 
 	return s, nil
 }
 
-func (s *Server) Serve(w http.ResponseWriter, r *http.Request) {
+func (s *Server) Serve(w http.ResponseWriter, r *http.Request) http.Handler {
 	atomic.AddInt64(&s.activeConnections, 1)
 	defer atomic.AddInt64(&s.activeConnections, -1)
 
-	s.rp.ServeHTTP(w, r)
+	return s.rp
 }
