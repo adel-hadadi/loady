@@ -20,7 +20,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	controller, err := lb.NewController(cfg)
+	srvRegistry := lb.NewServerRegistry()
+
+	controller, err := lb.NewController(cfg, srvRegistry)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -2,86 +2,13 @@ package lb
 
 import (
 	"fmt"
-	"github.com/adel-hadadi/load-balancer/utils"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"sync"
+	"strings"
 	"sync/atomic"
 )
-
-var HealthyServers = promauto.NewGauge(prometheus.GaugeOpts{
-	Name: "healthy_servers_count",
-	Help: "Number of servers currently marked as healthy",
-})
-
-type ServerRegistry struct {
-	mu      sync.RWMutex
-	urls    []string
-	servers []*Server
-}
-
-func NewServerRegistry(servers []string) (*ServerRegistry, error) {
-	r := &ServerRegistry{
-		servers: make([]*Server, 0),
-	}
-
-	err := r.UpdateServers(servers)
-	if err != nil {
-		return nil, err
-	}
-
-	return r, nil
-}
-
-func (r *ServerRegistry) UpdateServers(urls []string) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	added, removed := utils.DiffSlices(r.urls, urls)
-
-	for _, u := range added {
-		s, err := NewServer(u)
-		if err != nil {
-			return fmt.Errorf("failed to add server %s: %v", u, err)
-		}
-
-		r.servers = append(r.servers, s)
-		r.urls = append(r.urls, u)
-	}
-
-	for _, u := range removed {
-		for k, server := range r.servers {
-			if server.url == u {
-				r.servers = append(r.servers[:k], r.servers[k+1:]...)
-				r.urls = append(r.urls[:k], r.urls[k+1:]...)
-			}
-		}
-	}
-
-	return nil
-}
-
-func (r *ServerRegistry) All() []*Server {
-	return r.servers
-}
-
-func (r *ServerRegistry) HealthyServers() []*Server {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	var healthy []*Server
-	for _, server := range r.servers {
-		if server.IsHealthy() {
-			healthy = append(healthy, server)
-		}
-	}
-
-	return healthy
-}
 
 type Server struct {
 	url               string
@@ -122,6 +49,11 @@ func (s *Server) CheckHealth(path string) {
 }
 
 func NewServer(u string) (*Server, error) {
+	// default scheme
+	if !strings.HasPrefix(u, "http://") && !strings.HasPrefix(u, "https://") {
+		u = "http://" + u
+	}
+
 	target, err := url.Parse(u)
 	if err != nil {
 		return nil, fmt.Errorf("invalid urls: %w", err)

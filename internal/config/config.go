@@ -20,6 +20,7 @@ type Config struct {
 	Servers     []string
 	Port        int
 	Algorithm   string
+	Provider    string
 	Healthcheck struct {
 		Interval time.Duration
 		Timeout  time.Duration

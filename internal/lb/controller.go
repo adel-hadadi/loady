@@ -2,51 +2,68 @@ package lb
 
 import (
 	"context"
-	"github.com/adel-hadadi/load-balancer/internal/config"
+	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/adel-hadadi/load-balancer/internal/config"
 )
 
 type Controller struct {
 	cfg                *config.Config
 	registry           *ServerRegistry
 	checker            *HealthChecker
-	balancer           Balancer
 	cancelHealth       context.CancelFunc
 	provider           *BalancerProvider
 	healthCheckRunning bool
+	serverProvider     ServerProvider
 }
 
-func NewController(cfg *config.Config) (*Controller, error) {
-	reg, err := NewServerRegistry(cfg.Servers)
+func NewController(cfg *config.Config, serverRegistry *ServerRegistry) (*Controller, error) {
+	provider, err := New(serverRegistry, cfg.Algorithm)
 	if err != nil {
 		return nil, err
 	}
 
-	provider, err := New(reg, cfg.Algorithm)
+	serverProvider, err := NewServerProvider(cfg.Provider)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create server provider: %w", err)
 	}
 
 	return &Controller{
-		registry:           reg,
+		registry:           serverRegistry,
 		provider:           provider,
 		checker:            &HealthChecker{},
 		healthCheckRunning: false,
 		cfg:                cfg,
+		serverProvider:     serverProvider,
 	}, nil
 }
 
 func (c *Controller) Run(ctx context.Context) error {
 	c.runHealthCheck()
 
+	evts := make(chan ServerEvent)
+	err := c.serverProvider.Watch(ctx, evts)
+	if err != nil {
+		return fmt.Errorf("failed to watch server events: %w", err)
+	}
+
 	go func() {
-		ch := c.cfg.Watch()
+		for evt := range evts {
+			err := c.registry.HandleEvent(evt)
+			if err != nil {
+				log.Printf("failed to handle event: %v", err)
+				return
+			}
+		}
+	}()
+
+	go func() {
+		e := c.cfg.Watch()
 		for {
 			select {
-			case <-ctx.Done():
-				return
-			case newCfg := <-ch:
+			case newCfg := <-e:
 				log.Println("Config change detect")
 
 				err := c.applyConfig(newCfg)
@@ -54,23 +71,19 @@ func (c *Controller) Run(ctx context.Context) error {
 					log.Printf("failed to apply configuration: %v", err)
 					return
 				}
+			case <-ctx.Done():
+				return
 			}
 		}
-
 	}()
 
 	return nil
 }
 
 func (c *Controller) applyConfig(cfg *config.Config) error {
-	err := c.registry.UpdateServers(cfg.Servers)
-	if err != nil {
-		return err
-	}
-
 	c.runHealthCheck()
 
-	err = c.provider.SetupAlgorithm(cfg.Algorithm)
+	err := c.provider.SetupAlgorithm(cfg.Algorithm)
 	if err != nil {
 		return err
 	}

@@ -1,0 +1,27 @@
+services:
+  loady:
+    image: adelhadadi81/loady
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./config.yaml:/etc/loady/config.yml
+    ports:
+      - "80:80"
+    networks:
+      - balancer
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - loady
+    expose:
+      - "80"
+    labels:
+      - "loady.enabled=true"
+    networks:
+      - balancer
+
+networks:
+  balancer:
+    driver: bridge
