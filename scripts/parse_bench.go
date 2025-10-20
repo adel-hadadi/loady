@@ -66,7 +66,7 @@ func main() {
 					time.Now(),
 				)
 				if err := writeAPI.WritePoint(context.Background(), point); err != nil {
-					fmt.Println("write error:", err)
+					panic(fmt.Errorf("failed to write point: %w", err))
 				}
 			}
 		}
