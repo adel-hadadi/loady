@@ -89,7 +89,7 @@ func (p *DockerProvider) Watch(ctx context.Context, e chan<- ServerEvent) error 
 				}
 			case err := <-chanErrs:
 				if err != nil {
-					log.Printf("error on listening to docker events: %w", err)
+					log.Printf("error on listening to docker events: %v", err)
 					return
 				}
 			case <-ctx.Done():

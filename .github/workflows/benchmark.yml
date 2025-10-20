@@ -1,0 +1,40 @@
+name: Benchmark Check
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+env:
+  INFLUX_URL: ${{ secrets.INFLUX_URL }}
+  INFLUX_TOKEN: ${{ secrets.INFLUX_TOKEN }}
+  INFLUX_ORG: ${{ secrets.INFLUX_ORG }}
+  INFLUX_BUCKET: ${{ secrets.INFLUX_BUCKET }}
+  THRESHOLD: "1.10" # fail if >10% slower
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: Run benchmarks
+        run: |
+          mkdir -p reports
+          go test -bench=. -benchmem -run=^$ ./... > reports/bench.txt
+          cat reports/bench.txt
+
+      - name: Compare with baseline
+        run: |
+          go run scripts/parse_bench.go reports/bench.txt
+
+      - name: Upload benchmark report
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-report
+          path: reports/bench.txt
