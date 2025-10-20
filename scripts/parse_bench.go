@@ -49,7 +49,9 @@ func main() {
 				time.Now(),
 			)
 
-			_ = writeAPI.WritePoint(context.Background(), p)
+			if err := writeAPI.WritePoint(context.Background(), p); err != nil {
+				panic(err)
+			}
 		}
 	}
 }
