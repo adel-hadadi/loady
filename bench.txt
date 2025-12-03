@@ -5,22 +5,5 @@ goos: linux
 goarch: amd64
 pkg: github.com/adel-hadadi/load-balancer/internal/lb
 cpu: 12th Gen Intel(R) Core(TM) i5-12450H
-BenchmarkRoundRobinNext-12         	433679396	         2.779 ns/op	       0 B/op	       0 allocs/op
-BenchmarkRoundRobinNext-12         	435017613	         2.764 ns/op	       0 B/op	       0 allocs/op
-BenchmarkRoundRobinNext-12         	434753499	         2.753 ns/op	       0 B/op	       0 allocs/op
-BenchmarkRoundRobinNext-12         	434785638	         2.752 ns/op	       0 B/op	       0 allocs/op
-BenchmarkRoundRobinNext-12         	435770464	         2.752 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPHashNext-12             	29270602	        40.53 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPHashNext-12             	29509795	        40.51 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPHashNext-12             	29300497	        40.52 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPHashNext-12             	27984926	        40.63 ns/op	       0 B/op	       0 allocs/op
-BenchmarkIPHashNext-12             	29345562	        40.62 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLeastConnectionNext-12    	302583654	         3.950 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLeastConnectionNext-12    	304390570	         3.914 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLeastConnectionNext-12    	306067521	         3.907 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLeastConnectionNext-12    	304133542	         3.917 ns/op	       0 B/op	       0 allocs/op
-BenchmarkLeastConnectionNext-12    	307238515	         3.923 ns/op	       0 B/op	       0 allocs/op
-PASS
-ok  	github.com/adel-hadadi/load-balancer/internal/lb	21.510s
-?   	github.com/adel-hadadi/load-balancer/internal/transport	[no test files]
-?   	github.com/adel-hadadi/load-balancer/utils	[no test files]
+BenchmarkRoundRobinNext-12         	signal: interrupt
+FAIL	github.com/adel-hadadi/load-balancer/internal/lb	0.829s

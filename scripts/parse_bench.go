@@ -21,7 +21,7 @@ func main() {
 	commit := os.Getenv("GITHUB_SHA")
 	branch := os.Getenv("GITHUB_REF_NAME")
 
-	file, err := os.Open("bench.txt") // file with `go test -bench=. -benchmem` output
+	file, err := os.Open(os.Args[1]) // file with `go test -bench=. -benchmem` output
 	if err != nil {
 		panic(err)
 	}

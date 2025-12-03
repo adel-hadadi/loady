@@ -5,7 +5,6 @@ import (
 	"testing"
 )
 
-// helper: create sample servers
 func mockServers(n int) []*Server {
 	servers := make([]*Server, n)
 	for i := range servers {
@@ -14,7 +13,6 @@ func mockServers(n int) []*Server {
 	return servers
 }
 
-// helper: create dummy request
 func mockRequest() *http.Request {
 	req, _ := http.NewRequest("GET", "http://example.com", nil)
 	req.RemoteAddr = "192.168.1.100:1234"
